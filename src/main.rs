@@ -36,7 +36,7 @@ impl Camera {
         Camera {
             // position the camera 1 unit up and 2 units back
             // +z is out of the screen
-            eye: (0.0, 1.0, 6.0).into(),
+            eye: (0.0, 0.0, 12.0).into(),
             // have it look at the origin
             target: (0.0, 0.0, 0.0).into(),
             // which way is "up"
@@ -89,9 +89,9 @@ fn read_obj_model(file: &str) -> (Vec<Vertex>, Vec<u16>) {
                     ]);
                 },
                 Some("f") => {
-                    indices.push(words.next().unwrap().parse().unwrap());
-                    indices.push(words.next().unwrap().parse().unwrap());
-                    indices.push(words.next().unwrap().parse().unwrap());
+                    indices.push(words.next().unwrap().parse::<u16>().unwrap() - 1);
+                    indices.push(words.next().unwrap().parse::<u16>().unwrap() - 1);
+                    indices.push(words.next().unwrap().parse::<u16>().unwrap() - 1);
                 },
                 _ => {
                     panic!("Invalid file");
@@ -106,6 +106,7 @@ fn read_obj_model(file: &str) -> (Vec<Vertex>, Vec<u16>) {
 
 fn main() {
     let (vertices, indices) = read_obj_model("teapot.obj");
+
     let sdl = sdl2::init().unwrap();
     let video_subsystem = sdl.video().unwrap();
     let window = video_subsystem
@@ -128,7 +129,8 @@ fn main() {
     unsafe {
         gl::ClearColor(0.3, 0.3, 0.5, 1.0);
         gl::Enable(gl::DEPTH_TEST);
-        // gl::DepthFunc(gl::LESS);  
+        gl::DepthFunc(gl::LESS);  
+        gl::PolygonMode(gl::FRONT_AND_BACK, gl::LINE);
     }
 
     unsafe {
@@ -137,6 +139,7 @@ fn main() {
         gl::BindVertexArray(VAO);
     }
 
+    let mut EBO = 0;
     unsafe {
         let mut VBO = 0;
         gl::GenBuffers(1, &mut VBO);
@@ -156,6 +159,15 @@ fn main() {
             0 as *const _,
         );
         gl::EnableVertexAttribArray(0);
+
+        gl::GenBuffers(1, &mut EBO);
+        gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, EBO);
+        gl::BufferData(
+            gl::ELEMENT_ARRAY_BUFFER,
+            (indices.len() * size_of::<u16>()) as isize,
+            indices.as_ptr().cast(),
+            gl::STATIC_DRAW,
+        );
     }
 
     let shader_program: u32;
@@ -210,7 +222,9 @@ fn main() {
             gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
             gl::UseProgram(shader_program);
             gl::UniformMatrix4fv(uniform_mvp, 1, gl::FALSE, camera.build_view_projection_matrix().as_ptr());
-            gl::DrawArrays(gl::TRIANGLES, 0, vertices.len() as i32);
+            gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, EBO);
+            gl::DrawElements(gl::TRIANGLES, indices.len() as i32, gl::UNSIGNED_SHORT, 0 as *const _);
+            // gl::DrawArrays(gl::TRIANGLES, 0, vertices.len() as i32);
         }
 
         window.gl_swap_window();
