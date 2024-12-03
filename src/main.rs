@@ -7,7 +7,7 @@ const VERT_SHADER: &str = r#"#version 330 core
   out vec3 fragment_pos;
   uniform mat4 MVP;
   void main() {
-    fragment_pos = pos.xyz;
+    fragment_pos = pos;
     gl_Position = MVP * vec4(pos.x, pos.y, pos.z, 1.0);
   }
 "#;
@@ -31,13 +31,18 @@ fn main() {
     let mut mundo = Mundo::new();
 
     let perlin = Perlin::new(1);
+
     for z in 0..mundo::MIDA as u8 {
         for x in 0..mundo::MIDA as u8 {
-            let val = perlin.get([0.01*x as f64,0.01*z as f64]);
-            let altura = (val * 16.0) as u8;
+            let val = perlin.get([0.005*x as f64,0.005*z as f64]) * 100.0 + perlin.get([0.05*x as f64,0.05*z as f64]) * 10.0;
+            let altura = val as u8;
             mundo.set(x,altura,z,1);
+            for y in 0..altura {
+                mundo.set(x,y,z,1);
+            }
         }
     }
+
     let verts: Vec<f32> = mundo.to_vertex();
     let sdl = sdl2::init().unwrap();
     let video_subsystem = sdl.video().unwrap();
