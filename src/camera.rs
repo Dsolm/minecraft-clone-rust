@@ -1,11 +1,24 @@
+use cgmath::Vector3;
+use gl::GetRenderbufferParameteriv;
+
 pub struct Camera {
     pub eye: cgmath::Point3<f32>,
-    pub target: cgmath::Point3<f32>,
-    pub up: cgmath::Vector3<f32>,
-    pub aspect: f32,
-    pub fovy: f32,
-    pub znear: f32,
-    pub zfar: f32,
+    front: cgmath::Vector3<f32>,
+    right: cgmath::Vector3<f32>,
+    up: cgmath::Vector3<f32>,
+    aspect: f32,
+    fovy: f32,
+    znear: f32,
+    zfar: f32,
+    angulo_horizontal: f32,
+    angulo_vertical: f32,
+}
+
+pub enum Direction {
+    Left,
+    Right,
+    Front,
+    Back,
 }
 
 impl Camera {
@@ -13,20 +26,53 @@ impl Camera {
         Camera {
             // position the camera 1 unit up and 2 units back
             // +z is out of the screen
-            eye: (0.0, 10.0, 12.0).into(),
+            eye: (0.0, 0.0, 30.0).into(),
             // have it look at the origin
-            target: (0.0, 0.0, 0.0).into(),
+            angulo_horizontal: 180.0_f32.to_radians(),
+            angulo_vertical: 0.0,
+            front: (0.0, 0.0, 1.0).into(),
             // which way is "up"
             up: cgmath::Vector3::unit_y(),
             aspect: window_width / window_height,
             fovy: 45.0,
             znear: 0.1,
             zfar: 100.0,
+            right: (1.0, 0.0, 0.0).into(),
         }
     }
+
+    pub fn rotate(&mut self, dx: f32, dy: f32) {
+        self.angulo_horizontal += dx;
+        self.angulo_vertical += dy;
+        self.front = Vector3::new(
+            self.angulo_horizontal.sin() * self.angulo_vertical.cos(),
+            self.angulo_vertical.sin(),
+            self.angulo_horizontal.cos() * self.angulo_vertical.cos(),
+        );
+        self.right = self.front.cross(self.up);
+    }
+
+    pub fn mover(&mut self, direction: Direction) {
+        match direction {
+            Direction::Front => {
+                self.eye += self.front * 0.1;
+            }
+            Direction::Back => {
+                self.eye -= self.front * 0.1;
+            }
+            Direction::Right => {
+                self.eye += self.right * 0.1;
+            }
+            Direction::Left => {
+                self.eye -= self.right * 0.1;
+            }
+            _ => {}
+        }
+    }
+
     pub fn build_view_projection_matrix(&self) -> cgmath::Matrix4<f32> {
         // 1.
-        let view = cgmath::Matrix4::look_at_rh(self.eye, self.target, self.up);
+        let view = cgmath::Matrix4::look_at_rh(self.eye, self.eye + self.front, self.up);
         // 2.
         let proj = cgmath::perspective(cgmath::Deg(self.fovy), self.aspect, self.znear, self.zfar);
 

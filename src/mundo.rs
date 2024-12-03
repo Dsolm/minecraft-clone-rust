@@ -2,7 +2,7 @@ pub struct Mundo {
     bloques: Vec<u8>
 }
 
-pub const MIDA: usize = 16;
+pub const MIDA: usize = 64;
 
 pub const VERTICES_CUADRADO: [f32; 36*3] = [
 	-1.0,-1.0,-1.0, // triangle 1 : begin

@@ -7,7 +7,7 @@ const VERT_SHADER: &str = r#"#version 330 core
   out vec3 fragment_pos;
   uniform mat4 MVP;
   void main() {
-    fragment_pos = pos;
+    fragment_pos = pos.xyz;
     gl_Position = MVP * vec4(pos.x, pos.y, pos.z, 1.0);
   }
 "#;
@@ -17,7 +17,8 @@ const FRAG_SHADER: &str = r#"
   out vec4 final_color;
   in vec3 fragment_pos;
   void main() {
-     final_color = vec4(fragment_pos,1.0);
+     vec3 color = abs(cos(fragment_pos));
+     final_color = vec4(color,1.0);
   }
 "#;
 
@@ -30,10 +31,10 @@ fn main() {
     let mut mundo = Mundo::new();
 
     let perlin = Perlin::new(1);
-    for z in 0..16 {
-        for x in 0..16 {
+    for z in 0..mundo::MIDA as u8 {
+        for x in 0..mundo::MIDA as u8 {
             let val = perlin.get([0.01*x as f64,0.01*z as f64]);
-            let altura = (val * mundo::MIDA as f64) as u8;
+            let altura = (val * 16.0) as u8;
             mundo.set(x,altura,z,1);
         }
     }
@@ -43,8 +44,6 @@ fn main() {
     let mut window_builder = video_subsystem
         .window("Game", 900, 700);
     let flags = window_builder.opengl().resizable().window_flags();
-    window_builder.set_window_flags(flags | sdl2::sys::SDL_WindowFlags::SDL_WINDOW_UTILITY as u32);
-
     let window = window_builder.build().unwrap();
 
     unsafe {
@@ -52,13 +51,15 @@ fn main() {
         SDL_GL_SetAttribute(sdl2::sys::SDL_GLattr::SDL_GL_CONTEXT_MAJOR_VERSION, 3);
         SDL_GL_SetAttribute(sdl2::sys::SDL_GLattr::SDL_GL_CONTEXT_MINOR_VERSION, 3);
         SDL_GL_SetSwapInterval(0);
+        sdl2::sys::SDL_SetRelativeMouseMode(sdl2::sys::SDL_bool::SDL_TRUE);
     }
 
     let _gl_context = window.gl_create_context().unwrap();
     gl::load_with(|s| video_subsystem.gl_get_proc_address(s) as *const std::os::raw::c_void);
 
     unsafe {
-        gl::ClearColor(0.3, 0.3, 0.5, 1.0);
+        gl::ClearColor(0.0, 0.0, 0.0, 1.0);
+        // gl::PolygonMode(gl::FRONT_AND_BACK, gl::LINE);
         gl::Enable(gl::DEPTH_TEST);
     }
 
@@ -139,6 +140,9 @@ fn main() {
         for event in event_pump.poll_iter() {
             match event {
                 sdl2::event::Event::Quit { .. } => break 'main,
+                sdl2::event::Event::MouseMotion { timestamp, window_id, which, mousestate, x, y, xrel, yrel } => {
+                    camera.rotate(xrel as f32 / -900.0, yrel as f32 / -700.0);
+                },
                 _ => {}
             }
         }
@@ -146,19 +150,34 @@ fn main() {
         let keyboard = KeyboardState::new(&event_pump);
 
         // let start = Instant::now();
-
-        if keyboard.is_scancode_pressed(Scancode::A) {
-            camera.eye.z += 0.1;
+        if keyboard.is_scancode_pressed(Scancode::T) {
+            camera.rotate(0.01, 0.0);
         }
+        if keyboard.is_scancode_pressed(Scancode::G) {
+            camera.rotate(-0.01, 0.0);
+        }
+
+        if keyboard.is_scancode_pressed(Scancode::E) {
+            camera.eye.y += 0.1;
+        }
+        if keyboard.is_scancode_pressed(Scancode::Q) {
+            camera.eye.y -= 0.1;
+        }
+
         if keyboard.is_scancode_pressed(Scancode::W) {
-            camera.eye.z -= 0.1;
+            camera.mover(camera::Direction::Front);
         }
         if keyboard.is_scancode_pressed(Scancode::S) {
-            camera.eye.x += 0.1;
+            camera.mover(camera::Direction::Back);
+        }
+
+        if keyboard.is_scancode_pressed(Scancode::A) {
+            camera.mover(camera::Direction::Left);
         }
         if keyboard.is_scancode_pressed(Scancode::D) {
-            camera.eye.x -= 0.1;
+            camera.mover(camera::Direction::Right);
         }
+
 
         unsafe {
             gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
