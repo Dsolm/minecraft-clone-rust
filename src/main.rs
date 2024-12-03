@@ -18,7 +18,7 @@ const FRAG_SHADER: &str = r#"
   in vec3 fragment_pos;
   void main() {
      vec3 color = abs(cos(fragment_pos));
-     final_color = vec4(color,1.0);
+     final_color = vec4(0.0,color.y, 0.0,1.0);
   }
 "#;
 
@@ -32,10 +32,10 @@ fn main() {
 
     let perlin = Perlin::new(1);
 
-    for z in 0..mundo::MIDA as u8 {
-        for x in 0..mundo::MIDA as u8 {
+    for z in 0..mundo::MIDA as u16 {
+        for x in 0..mundo::MIDA as u16 {
             let val = perlin.get([0.005*x as f64,0.005*z as f64]) * 100.0 + perlin.get([0.05*x as f64,0.05*z as f64]) * 10.0;
-            let altura = val as u8;
+            let altura = val as u16;
             mundo.set(x,altura,z,1);
             for y in 0..altura {
                 mundo.set(x,y,z,1);

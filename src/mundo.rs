@@ -2,8 +2,8 @@ pub struct Mundo {
     bloques: Vec<u8>
 }
 
-pub const MIDA: usize = 255;
-pub const MIDA_U8: u8 = MIDA as u8;
+pub const MIDA: usize = 1024;
+pub const MIDA_U16: u16 = MIDA as u16;
 
 pub const VERTICES_CUADRADO: [f32; 36*3] = [
 	-1.0,-1.0,-1.0, // triangle 1 : begin
@@ -54,11 +54,11 @@ pub const VERTICES_CUADRADO: [f32; 36*3] = [
 ];
 
 impl Mundo {
-    pub fn get(&self, x: u8, y: u8, z: u8) -> u8 {
+    pub fn get(&self, x: u16, y: u16, z: u16) -> u8 {
         self.bloques[MIDA * MIDA * z as usize + MIDA * y as usize + x as usize]
     }
 
-    pub fn set(&mut self, x: u8, y: u8, z: u8, val: u8) {
+    pub fn set(&mut self, x: u16, y: u16, z: u16, val: u8) {
         self.bloques[MIDA * MIDA * z as usize + MIDA * y as usize + x as usize] = val;
     }
 
@@ -72,26 +72,26 @@ impl Mundo {
     }
 
 
-    fn is_air(&self, x: u8, y:u8, z:u8) -> bool {
+    fn is_air(&self, x: u16, y:u16, z:u16) -> bool {
         self.get(x, y, z) == 0
     }
 
-    fn touches_air(&self, x: u8, y: u8, z:u8) -> bool {
+    fn touches_air(&self, x: u16, y: u16, z:u16) -> bool {
 
-        (x < MIDA_U8-1 && self.is_air(x+1,y,z)) || 
+        (x < MIDA_U16-1 && self.is_air(x+1,y,z)) || 
             (x > 0 && self.is_air(x-1,y,z)) || 
-            (y < MIDA_U8-1 && self.is_air(x,y+1,z)) || 
+            (y < MIDA_U16-1 && self.is_air(x,y+1,z)) || 
             (y > 0 && self.is_air(x,y-1,z)) || 
-            (z < MIDA_U8-1 && self.is_air(x,y,z+1)) || 
+            (z < MIDA_U16-1 && self.is_air(x,y,z+1)) || 
             (z > 0 && self.is_air(x,y,z-1))
     }
 
     pub fn to_vertex(&self) -> Vec<f32> {
         let mut vertices = vec![];
 
-        for z in 0..MIDA as u8 {
-            for y in 0..MIDA as u8 {
-                for x in 0..MIDA as u8 {
+        for z in 0..MIDA as u16 {
+            for y in 0..MIDA as u16 {
+                for x in 0..MIDA as u16 {
                     if self.get(x,y,z) == 0 {
                         continue;
                     }
@@ -105,6 +105,7 @@ impl Mundo {
                 }
             }
         }
+        println!("Emiting: {} vertexs {} bytes in total", vertices.len(), vertices.len() * size_of::<f32>());
         vertices
     }
 
