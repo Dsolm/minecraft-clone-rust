@@ -36,7 +36,7 @@ impl Camera {
             aspect: window_width / window_height,
             fovy: 45.0,
             znear: 0.1,
-            zfar: 100.0,
+            zfar: 1000.0,
             right: (1.0, 0.0, 0.0).into(),
         }
     }
@@ -52,19 +52,20 @@ impl Camera {
         self.right = self.front.cross(self.up);
     }
 
+    const SPEED_SCALE: f32 = 1.0;
     pub fn mover(&mut self, direction: Direction) {
         match direction {
             Direction::Front => {
-                self.eye += self.front * 0.1;
+                self.eye += self.front * Self::SPEED_SCALE;
             }
             Direction::Back => {
-                self.eye -= self.front * 0.1;
+                self.eye -= self.front * Self::SPEED_SCALE;
             }
             Direction::Right => {
-                self.eye += self.right * 0.1;
+                self.eye += self.right * Self::SPEED_SCALE;
             }
             Direction::Left => {
-                self.eye -= self.right * 0.1;
+                self.eye -= self.right * Self::SPEED_SCALE;
             }
             _ => {}
         }
