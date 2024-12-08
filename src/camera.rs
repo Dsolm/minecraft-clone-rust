@@ -1,5 +1,4 @@
 use cgmath::Vector3;
-use gl::GetRenderbufferParameteriv;
 
 pub struct Camera {
     pub eye: cgmath::Point3<f32>,
@@ -67,7 +66,6 @@ impl Camera {
             Direction::Left => {
                 self.eye -= self.right * Self::SPEED_SCALE;
             }
-            _ => {}
         }
     }
 
