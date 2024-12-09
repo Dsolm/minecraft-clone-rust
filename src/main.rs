@@ -1,4 +1,4 @@
-use std::str::from_utf8;
+use std::{str::from_utf8, thread, time::Duration};
 
 use cgmath::Matrix;
 use noise::{NoiseFn, Simplex};
@@ -38,6 +38,31 @@ mod camera;
 use camera::Camera;
 mod mundo;
 use mundo::{Mundo, MIDA};
+
+fn crea_mundo_vbo(mundo: &Mundo) -> u32 {
+    let verts = mundo.to_vertex();
+    let mut vbo = 0;
+    unsafe {
+        gl::GenBuffers(1, &mut vbo);
+        gl::BindBuffer(gl::ARRAY_BUFFER, vbo);
+        gl::BufferData(
+            gl::ARRAY_BUFFER,
+            (verts.len() * 4) as isize,
+            verts.as_ptr().cast(),
+            gl::STATIC_DRAW,
+        );
+        gl::VertexAttribPointer(0, 3, gl::FLOAT, gl::FALSE, (4 * 6) as _, std::ptr::null());
+        gl::EnableVertexAttribArray(0);
+
+        gl::VertexAttribPointer(1, 2, gl::FLOAT, gl::FALSE, (4 * 6) as _, 12 as *const _);
+        gl::EnableVertexAttribArray(1);
+
+        gl::VertexAttribPointer(2, 1, gl::FLOAT, gl::FALSE, (4 * 6) as _, 20 as *const _); 
+        gl::EnableVertexAttribArray(2);
+    }
+    vbo
+}
+
 
 fn main() {
     let mut mundo = Mundo::new();
@@ -89,7 +114,6 @@ fn main() {
     mundo.set(0, 100, 2, 3);
     mundo.set(2, 100, 2, 4);
 
-    let verts: Vec<f32> = mundo.to_vertex();
     let sdl = sdl2::init().unwrap();
     let video_subsystem = sdl.video().unwrap();
     let window = video_subsystem
@@ -115,7 +139,7 @@ fn main() {
         ); // XXX: 1 es PROFILE_CORE
            // SDL_GL_SetSwapInterval(1);
         sdl2::sys::SDL_SetRelativeMouseMode(sdl2::sys::SDL_bool::SDL_TRUE);
-        SDL_GL_SetAttribute(sdl2::sys::SDL_GLattr::SDL_GL_DEPTH_SIZE, 24); // TODO: ???
+        SDL_GL_SetAttribute(sdl2::sys::SDL_GLattr::SDL_GL_DEPTH_SIZE, 24); 
         SDL_GL_SetAttribute(sdl2::sys::SDL_GLattr::SDL_GL_DOUBLEBUFFER, 1);
     }
 
@@ -126,7 +150,7 @@ fn main() {
         gl::ClearColor(0.0, 0.71, 0.71, 1.0);
         // gl::PolygonMode(gl::FRONT_AND_BACK, gl::LINE);
         gl::Enable(gl::DEPTH_TEST);
-        gl::Enable(gl::CULL_FACE); // TODO AÑADIR
+        gl::Enable(gl::CULL_FACE);
         gl::CullFace(gl::BACK);
         gl::FrontFace(gl::CW);
     }
@@ -136,29 +160,8 @@ fn main() {
         gl::GenVertexArrays(1, &mut vao);
         gl::BindVertexArray(vao);
     }
+    let mut vbo = crea_mundo_vbo(&mundo);
 
-    let mut vbo = 0;
-    unsafe {
-        gl::GenBuffers(1, &mut vbo);
-        gl::BindBuffer(gl::ARRAY_BUFFER, vbo);
-        gl::BufferData(
-            gl::ARRAY_BUFFER,
-            (verts.len() * 4) as isize,
-            verts.as_ptr().cast(),
-            gl::STATIC_DRAW,
-        );
-        gl::VertexAttribPointer(0, 3, gl::FLOAT, gl::FALSE, (4 * 6) as _, std::ptr::null());
-        gl::EnableVertexAttribArray(0);
-
-        gl::VertexAttribPointer(1, 2, gl::FLOAT, gl::FALSE, (4 * 6) as _, 12 as *const _);
-        gl::EnableVertexAttribArray(1);
-
-        gl::VertexAttribPointer(2, 1, gl::FLOAT, gl::FALSE, (4 * 6) as _, 20 as *const _); // TODO: Muy mal
-        gl::EnableVertexAttribArray(2);
-        // gl::GenBuffers(1, &mut ebo);
-        // gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, ebo);
-        // gl::BufferData(gl::ELEMENT_ARRAY_BUFFER, (index.len() * 2) as isize, index.as_ptr().cast(), gl::STATIC_DRAW);
-    }
 
     let shader_program: u32;
     let location;
@@ -281,7 +284,7 @@ fn main() {
             gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_S, gl::REPEAT as i32);
             gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_T, gl::REPEAT as i32);
             gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::NEAREST as i32);
-            gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::NEAREST as i32); // TODO: ????
+            gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::NEAREST as i32); 
 
             gl::GenerateMipmap(gl::TEXTURE_2D);
         },
@@ -312,11 +315,16 @@ fn main() {
 
         let keyboard = KeyboardState::new(&event_pump);
 
-        if keyboard.is_scancode_pressed(Scancode::T) {
-            camera.rotate(0.01, 0.0);
-        }
         if keyboard.is_scancode_pressed(Scancode::G) {
-            camera.rotate(-0.01, 0.0);
+            let (x,y,z) = camera.get_bloque_apuntado();
+            mundo.set(x, y, z, 5);
+            unsafe {
+                gl::DeleteBuffers(1, &vbo)
+            };
+            vbo = crea_mundo_vbo(&mundo);
+
+            thread::sleep(Duration::from_millis(500));
+
         }
 
         if keyboard.is_scancode_pressed(Scancode::E) {
@@ -348,15 +356,15 @@ fn main() {
             let vp = camera.build_view_projection_matrix();
             gl::UniformMatrix4fv(location, 1, gl::FALSE, vp.as_ptr());
 
-            gl::DrawArrays(gl::TRIANGLES, 0, (verts.len() / 6) as _); // TODO: Muy mal
+            gl::DrawArrays(gl::TRIANGLES, 0, (verts.len() / 6) as _); 
                                                                       // gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, ebo);
                                                                       // gl::DrawElements(gl::TRIANGLES, index.len() as i32, gl::UNSIGNED_SHORT, 0 as _);
         }
         window.gl_swap_window();
 
-        unsafe {
-            SDL_Delay(5);
-        }
+        // unsafe {
+        //     // SDL_Delay(5);
+        // }
     }
     unsafe {
         gl::DeleteProgram(shader_program);

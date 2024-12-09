@@ -1,5 +1,7 @@
 use cgmath::Vector3;
 
+use crate::mundo::Mundo;
+
 pub struct Camera {
     pub eye: cgmath::Point3<f32>,
     front: cgmath::Vector3<f32>,
@@ -77,5 +79,10 @@ impl Camera {
 
         // 3.
         proj * view
+    }
+
+    pub fn get_bloque_apuntado(&self) -> (u16,u16,u16) {
+        let posicion = self.eye + self.front;
+        (posicion.x as u16, posicion.y as u16, posicion.z as u16)
     }
 }

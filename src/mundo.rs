@@ -2,7 +2,7 @@ pub struct Mundo {
     bloques: Vec<u8>,
 }
 
-pub const MIDA: usize = 1024;
+pub const MIDA: usize = 255;
 pub const MIDA_U16: u16 = MIDA as u16;
 
 pub const VERTICES_CUADRADO: [f32; 36*6] = [
