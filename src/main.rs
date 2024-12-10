@@ -3,6 +3,7 @@ mod trozo;
 use std::{str::from_utf8, thread, time::Duration};
 
 use cgmath::Matrix;
+use gl::MinSampleShading;
 use noise::{NoiseFn, Simplex};
 use sdl2::{
     keyboard::{KeyboardState, Scancode},
@@ -328,8 +329,7 @@ fn main() {
 
             let vp = camera.build_view_projection_matrix();
             gl::UniformMatrix4fv(location, 1, gl::FALSE, vp.as_ptr());
-            mundo.dibuja();
-
+            mundo.dibuja(&camera, shader_program);
             // gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, ebo);
             // gl::DrawElements(gl::TRIANGLES, index.len() as i32, gl::UNSIGNED_SHORT, 0 as _);
         }
