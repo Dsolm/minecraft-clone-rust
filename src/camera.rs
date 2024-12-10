@@ -81,8 +81,12 @@ impl Camera {
         proj * view
     }
 
-    pub fn get_bloque_apuntado(&self) -> (u16,u16,u16) {
+    pub fn get_bloque_apuntado(&self) -> (usize, usize, usize) {
         let posicion = self.eye + self.front;
-        (posicion.x as u16, posicion.y as u16, posicion.z as u16)
+        (
+            posicion.x as usize,
+            posicion.y as usize,
+            posicion.z as usize,
+        )
     }
 }

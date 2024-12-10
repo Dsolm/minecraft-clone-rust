@@ -1,3 +1,5 @@
+mod trozo;
+
 use std::{str::from_utf8, thread, time::Duration};
 
 use cgmath::Matrix;
@@ -39,42 +41,17 @@ use camera::Camera;
 mod mundo;
 use mundo::{Mundo, MIDA};
 
-fn crea_mundo_vbo(mundo: &Mundo) -> u32 {
-    let verts = mundo.to_vertex();
-    let mut vbo = 0;
-    unsafe {
-        gl::GenBuffers(1, &mut vbo);
-        gl::BindBuffer(gl::ARRAY_BUFFER, vbo);
-        gl::BufferData(
-            gl::ARRAY_BUFFER,
-            (verts.len() * 4) as isize,
-            verts.as_ptr().cast(),
-            gl::STATIC_DRAW,
-        );
-        gl::VertexAttribPointer(0, 3, gl::FLOAT, gl::FALSE, (4 * 6) as _, std::ptr::null());
-        gl::EnableVertexAttribArray(0);
-
-        gl::VertexAttribPointer(1, 2, gl::FLOAT, gl::FALSE, (4 * 6) as _, 12 as *const _);
-        gl::EnableVertexAttribArray(1);
-
-        gl::VertexAttribPointer(2, 1, gl::FLOAT, gl::FALSE, (4 * 6) as _, 20 as *const _); 
-        gl::EnableVertexAttribArray(2);
-    }
-    vbo
-}
-
-
 fn main() {
     let mut mundo = Mundo::new();
 
     let perlin: noise::Fbm<Simplex> = noise::Fbm::new(1);
-    for z in 0..mundo::MIDA as u16 {
-        for x in 0..mundo::MIDA as u16 {
+    for z in 0..mundo::MIDA {
+        for x in 0..mundo::MIDA {
             let val = perlin.get([0.0001 * x as f64, 0.0001 * z as f64])
                 * 500.0
                 * perlin.get([0.005 * x as f64, 0.005 * z as f64]);
 
-            let altura = ((2.0 * val) - 2.0) as u16;
+            let altura = ((2.0 * val) - 2.0) as usize;
 
             let val = match altura {
                 0 => 2,
@@ -84,9 +61,9 @@ fn main() {
                 5..20 => {
                     if unsafe { random() % 1000 } < 30
                         && x > 5
-                        && x < MIDA as u16
+                        && x < MIDA 
                         && z > 5
-                        && z < MIDA as u16 - 5
+                        && z < MIDA - 5
                     {
                         mundo.set(x, altura, z, 1);
                         mundo.set(x, altura + 1, z, 1);
@@ -109,10 +86,10 @@ fn main() {
             }
         }
     }
-    mundo.set(0, 100, 0, 1);
-    mundo.set(2, 100, 0, 2);
-    mundo.set(0, 100, 2, 3);
-    mundo.set(2, 100, 2, 4);
+    mundo.set(0, 0, 0, 1);
+    mundo.set(2, 0, 0, 2);
+    mundo.set(0, 0, 2, 3);
+    mundo.set(2, 0, 2, 4);
 
     let sdl = sdl2::init().unwrap();
     let video_subsystem = sdl.video().unwrap();
@@ -160,8 +137,8 @@ fn main() {
         gl::GenVertexArrays(1, &mut vao);
         gl::BindVertexArray(vao);
     }
-    let mut vbo = crea_mundo_vbo(&mundo);
 
+    mundo.genera_todas_las_mallas();
 
     let shader_program: u32;
     let location;
@@ -318,11 +295,7 @@ fn main() {
         if keyboard.is_scancode_pressed(Scancode::G) {
             let (x,y,z) = camera.get_bloque_apuntado();
             mundo.set(x, y, z, 5);
-            unsafe {
-                gl::DeleteBuffers(1, &vbo)
-            };
-            vbo = crea_mundo_vbo(&mundo);
-
+            mundo.genera_todas_las_mallas();
             thread::sleep(Duration::from_millis(500));
 
         }
@@ -355,10 +328,10 @@ fn main() {
 
             let vp = camera.build_view_projection_matrix();
             gl::UniformMatrix4fv(location, 1, gl::FALSE, vp.as_ptr());
+            mundo.dibuja();
 
-            gl::DrawArrays(gl::TRIANGLES, 0, (verts.len() / 6) as _); 
-                                                                      // gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, ebo);
-                                                                      // gl::DrawElements(gl::TRIANGLES, index.len() as i32, gl::UNSIGNED_SHORT, 0 as _);
+            // gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, ebo);
+            // gl::DrawElements(gl::TRIANGLES, index.len() as i32, gl::UNSIGNED_SHORT, 0 as _);
         }
         window.gl_swap_window();
 
@@ -369,7 +342,6 @@ fn main() {
     unsafe {
         gl::DeleteProgram(shader_program);
         gl::DeleteTextures(1, &texture);
-        gl::DeleteBuffers(1, &vbo);
         gl::DeleteVertexArrays(1, &vao);
     }
 }
