@@ -1,6 +1,5 @@
 use cgmath::Vector3;
 
-use crate::mundo::Mundo;
 
 pub struct Camera {
     pub eye: cgmath::Point3<f32>,

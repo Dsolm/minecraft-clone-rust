@@ -3,11 +3,10 @@ mod trozo;
 use std::{str::from_utf8, thread, time::Duration};
 
 use cgmath::Matrix;
-use gl::MinSampleShading;
 use noise::{NoiseFn, Simplex};
 use sdl2::{
     keyboard::{KeyboardState, Scancode},
-    sys::{random, SDL_Delay, SDL_GL_SetAttribute, SDL_GLprofile},
+    sys::{random, SDL_GL_SetAttribute, SDL_GLprofile},
 };
 
 const VERT_SHADER: &str = r#"#version 330 core
@@ -69,9 +68,9 @@ fn main() {
                         mundo.set(x, altura, z, 1);
                         mundo.set(x, altura + 1, z, 1);
                         mundo.set(x, altura + 2, z, 1);
-                        for x in x - 1..=x + 1 {
+                        for y in altura + 3..=6 + altura {
                             for z in z - 1..=z + 1 {
-                                for y in altura + 3..=6 + altura {
+                                for x in x - 1..=x + 1 {
                                     mundo.set(x, y, z, 5);
                                 }
                             }
@@ -87,6 +86,7 @@ fn main() {
             }
         }
     }
+
     mundo.set(0, 0, 0, 1);
     mundo.set(2, 0, 0, 2);
     mundo.set(0, 0, 2, 3);
