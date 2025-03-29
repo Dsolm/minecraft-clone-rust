@@ -7,6 +7,7 @@ pub struct Mundo {
 }
 
 pub const MIDA_MUNDO: usize = 8;
+
 pub const MIDA: usize = MIDA_MUNDO * trozo::MIDA;
 
 impl Mundo {
@@ -57,8 +58,8 @@ impl Mundo {
         let mut vertices = vec![];
         vertices.reserve(trozo::MIDA.pow(3)*6*36);
 
-        for z in chunk.2*trozo::MIDA..chunk.2*trozo::MIDA+trozo::MIDA {
-            for y in chunk.1*trozo::MIDA..chunk.1*trozo::MIDA+trozo::MIDA {
+        for y in chunk.2*trozo::MIDA..chunk.2*trozo::MIDA+trozo::MIDA {
+            for z in chunk.1*trozo::MIDA..chunk.1*trozo::MIDA+trozo::MIDA {
                 for x in chunk.0*trozo::MIDA..chunk.0*trozo::MIDA+trozo::MIDA {
                     if self.get(x, y, z) == 0 {
                         continue;
