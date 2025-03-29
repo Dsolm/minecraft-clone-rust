@@ -1,0 +1,1 @@
+Minecraft clone written in rust with SDL2 and OpenGL. Not made to be especially fast.
